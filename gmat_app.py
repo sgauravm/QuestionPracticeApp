@@ -1,333 +1,55 @@
 import streamlit as st
+import os
+import json
 
-# Sample data for questions
-questions = [
-    {
-        "question": "If x*y < 0 and |x| > x, which of the following must be true?\n\nI. x < 0\nII. y < 0\nIII. x*y < 0\n\nA) I only\nB) II only\nC) III only\nD) I and III only\nE) II and III only",
-        "solution": "To solve this, let's analyze each part of the question:\n\n1. Since |x| > x, this means x must be negative (because the absolute value of x would be positive, which is greater than a negative x).\n2. x*y < 0 indicates that x and y have opposite signs. Since we established that x < 0, y must be positive for the product x*y to be negative.\n3. Therefore, statements I and III must be true: x < 0 and x*y < 0.\n\nThus, the correct answer is D) I and III only.",
-        "correct": "D) I and III only",
-        "options": [
-            "A) I only",
-            "B) II only",
-            "C) III only",
-            "D) I and III only",
-            "E) II and III only",
-        ],
-    },
-    {
-        "question": "If |a - b| > a - b, which of the following statements must be true?\n\nI. a < b\nII. b > a\nIII. a - b < 0\n\nA) I only\nB) II only\nC) III only\nD) I and III only\nE) II and III only",
-        "solution": "Let's examine each condition:\n\n1. If |a - b| > a - b, it means that a - b is negative, because the absolute value of a negative number is positive, and thus larger than the number itself.\n2. Since a - b < 0, this implies that a < b.\n3. Statements I and III are both correct. However, statement II is redundant since it conveys the same relationship in reverse order.\n\nTherefore, the answer is D) I and III only.",
-        "correct": "D) I and III only",
-        "options": [
-            "A) I only",
-            "B) II only",
-            "C) III only",
-            "D) I and III only",
-            "E) II and III only",
-        ],
-    },
-    {
-        "question": "If m*n < 0 and |m| < |n|, which of the following must be true?\n\nI. m and n have opposite signs\nII. |m| is smaller than |n|\nIII. m and n cannot both be positive\n\nA) I only\nB) II only\nC) III only\nD) I and II only\nE) II and III only",
-        "solution": "Let's analyze each statement:\n\n1. Since m*n < 0, m and n have opposite signs (one positive, one negative), which confirms Statement I.\n2. |m| < |n| is directly stated, so Statement II is also true.\n3. Statement III is implied since m and n must have opposite signs, meaning they cannot both be positive.\n\nThus, the correct answer is D) I and II only.",
-        "correct": "D) I and II only",
-        "options": [
-            "A) I only",
-            "B) II only",
-            "C) III only",
-            "D) I and II only",
-            "E) II and III only",
-        ],
-    },
-    {
-        "question": "A fair coin is flipped four times. What is the probability that the coin lands on heads exactly three times?",
-        "solution": "To solve this, we first find the total number of possible outcomes when a coin is flipped four times. Since each flip has 2 possible outcomes (heads or tails), there are 2^4 = 16 total outcomes. We are interested in outcomes where there are exactly 3 heads. The number of ways to get exactly 3 heads out of 4 flips is given by the binomial coefficient (4 choose 3), which is calculated as 4! / (3! * 1!) = 4. Thus, there are 4 outcomes with exactly 3 heads.\n\nThe probability of getting exactly 3 heads is the number of favorable outcomes divided by the total number of outcomes:\nP(3 heads) = 4 / 16 = 1/4.",
-        "correct": "1/4",
-        "options": ["1/4", "1/8", "3/8", "1/2", "5/8"],
-    },
-    {
-        "question": "A fair six-sided die is rolled three times. What is the probability that the number '4' appears exactly once?",
-        "solution": "When rolling a fair six-sided die, each side has an equal probability of 1/6. We are rolling the die three times and want the '4' to appear exactly once.\n\nFirst, calculate the probability of '4' appearing exactly once in three rolls:\n- For one roll to show a '4' (1/6), and the other two rolls to show a number other than '4' (5/6 each), the probability for each such sequence (like '4' on the first roll and not on the other two) is:\nP('4' on one roll) = (1/6) * (5/6) * (5/6) = 25/216.\n\nThere are 3 ways to position the '4' in three rolls (first, second, or third roll). Thus, the probability of getting '4' exactly once in three rolls is:\nP('4' exactly once) = 3 * (25/216) = 75/216 = 25/72.",
-        "correct": "25/72",
-        "options": ["1/6", "25/72", "5/8", "1/3", "1/2"],
-    },
-    {
-        "question": "In a bag with 3 red and 2 blue balls, two balls are drawn at random without replacement. What is the probability that one red and one blue ball are drawn?",
-        "solution": "First, determine the total number of ways to draw 2 balls from the 5-ball set:\n- Total ways = (5 choose 2) = 5! / (2! * (5 - 2)!) = 10.\n\nNext, we calculate the number of ways to draw one red and one blue ball:\n- Ways to select one red ball from 3 = (3 choose 1) = 3.\n- Ways to select one blue ball from 2 = (2 choose 1) = 2.\n\nThus, the number of favorable outcomes (1 red, 1 blue) = 3 * 2 = 6.\n\nThe probability of drawing one red and one blue ball is:\nP(1 red and 1 blue) = 6 / 10 = 3/5.",
-        "correct": "3/5",
-        "options": ["1/2", "3/5", "2/5", "3/10", "4/5"],
-    },
-    {
-        "question": "An artist earns a fee for each exhibition she participates in, which includes a fixed payment plus a percentage of the revenue from ticket sales. For her last two exhibitions, she earned $20,000 from an exhibition that generated $80,000 in ticket sales, and $15,000 from an exhibition that generated $50,000. If the artist wants to earn at least $30,000 from her next exhibition, what is the minimum ticket sales revenue the exhibition must generate?",
-        "solution": "Let's denote the fixed payment as F and the percentage of revenue she earns as P. We have:\n\n1. For the first exhibition: F + 0.80 * P = 20,000.\n2. For the second exhibition: F + 0.50 * P = 15,000.\n\nSubtracting the second equation from the first gives:\n\n0.30 * P = 5,000,\nP = 5,000 / 0.30 = 16,667.\n\nSubstituting P = 16,667 in the first equation gives:\n\nF + (0.80 * 16,667) = 20,000.\nF + 13,333 = 20,000,\nF = 6,667.\n\nTo earn $30,000, we need:\n\nF + x * 16,667 >= 30,000,\n6,667 + x * 16,667 = 30,000,\nx = 1.4 or 140,000.\n\nCorrect answer: 140,000.\n",
-        "correct": "$140,000",
-        "options": ["$100,000", "$120,000", "$140,000", "$160,000", "$180,000"],
-    },
-    {
-        "question": "A sales consultant receives a fixed monthly retainer and an additional percentage of her total sales revenue. In her last two months, she made $8,000 for $40,000 in sales and $10,500 for $60,000 in sales. If she aims to earn at least $12,000 next month, what is the minimum amount in sales revenue she must generate?",
-        "solution": "Let the fixed monthly retainer be R and the percentage of revenue she earns be p. We have:\n\n1. R + 0.4 * p = 8,000,\n2. R + 0.6 * p = 10,500.\n\nSubtracting the first equation from the second:\n\n0.2 * p = 2,500,\np = 2,500 / 0.2 = 12,500.\n\nSubstituting in the first equation:\n\nR + (0.4 * 12,500) = 8,000,\nR = 3,000.\n\nFor $12,000: R + p * x >= 12,000,\n3,000 + x * 12,500 >= 12,000,\nso x = 0.72 or $72,000.\n",
-        "correct": "$72,000",
-        "options": ["$50,000", "$60,000", "$72,000", "$80,000", "$90,000"],
-    },
-    {
-        "question": "A photographer's earnings for a shoot consist of a base fee plus a fixed percentage of the revenue from each additional client purchase. For two recent shoots, she made $2,500 with $1,000 in additional purchases and $3,300 with $2,000 in purchases. If she wants to make at least $4,000 on her next shoot, what is the minimum additional purchase revenue required?",
-        "solution": "Let the base fee be B and the percentage of client purchases be C. We have:\n\n1. B + 1,000 * C = 2,500,\n2. B + 2,000 * C = 3,300.\n\nSubtracting the first equation from the second gives:\n\n1,000 * C = 800,\nC = 800 / 1,000 = 0.8.\n\nSubstitute C = 0.8 in the first equation:\n\nB + 1,000 * 0.8 = 2,500,\nB = 2,500 - 800 = 1,700.\n\nTo make $4,000:\n\n1,700 + 0.8 * x >= 4,000,\n0.8 * x = 2,300,\nx = 2,300 / 0.8 = 2,875.\n\nCorrect answer: 2,875.\n",
-        "correct": "$2,875",
-        "options": ["$2,000", "$2,500", "$2,875", "$3,000", "$3,200"],
-    },
-    {
-        "question": "Which of the following is greater than 3/4?",
-        "solution": "Step 1: To compare each fraction to 3/4, we estimate or simplify each option.\nStep 2: Suppose the options are 4/5, (√2)/2, 7/10, 5/6, and (3/4)².\nStep 3: We estimate each:\n- 4/5 = 0.8, which is greater than 0.75.\n- (√2)/2 ≈ 0.707, which is less than 0.75.\n- 7/10 = 0.7, which is less than 0.75.\n- 5/6 ≈ 0.833, which is greater than 0.75.\n- (3/4)² = 9/16 ≈ 0.5625, which is less than 0.75.\nStep 4: The values greater than 3/4 are 4/5 and 5/6. The correct answer here is 4/5.",
-        "correct": "4/5",
-        "options": ["4/5", "(√2)/2", "7/10", "5/6", "(3/4)²"],
-    },
-    {
-        "question": "If a fraction is greater than (2/3) but less than (5/4), which of the following could be the fraction?",
-        "solution": "Step 1: We need to find a fraction between 2/3 and 5/4.\nStep 2: Calculate each boundary:\n- 2/3 ≈ 0.6667.\n- 5/4 = 1.25.\nStep 3: Suppose the options are 3/4, √3/2, 7/8, 5/6, and 6/5.\nStep 4: We estimate each:\n- 3/4 = 0.75, which is between 0.6667 and 1.25.\n- √3/2 ≈ 0.866, which is between 0.6667 and 1.25.\n- 7/8 = 0.875, which is between 0.6667 and 1.25.\n- 5/6 ≈ 0.833, which is between 0.6667 and 1.25.\n- 6/5 = 1.2, which is between 0.6667 and 1.25.\nStep 5: All options fit, but the correct answer chosen here is 7/8 as it lies between the boundaries and is less than 5/4.",
-        "correct": "7/8",
-        "options": ["3/4", "√3/2", "7/8", "5/6", "6/5"],
-    },
-    {
-        "question": "Which of the following is less than 3/4 but greater than (1/2)?",
-        "solution": "Step 1: Find values between 1/2 and 3/4.\nStep 2: Calculate each boundary:\n- 1/2 = 0.5.\n- 3/4 = 0.75.\nStep 3: Suppose the options are 5/8, √2/3, 2/3, 3/5, and 4/5.\nStep 4: We estimate each:\n- 5/8 = 0.625, which is between 0.5 and 0.75.\n- √2/3 ≈ 0.471, which is less than 0.5.\n- 2/3 ≈ 0.6667, which is between 0.5 and 0.75.\n- 3/5 = 0.6, which is between 0.5 and 0.75.\n- 4/5 = 0.8, which is greater than 0.75.\nStep 5: The values between the two boundaries are 5/8, 2/3, and 3/5. The correct answer here is 2/3.",
-        "correct": "2/3",
-        "options": ["5/8", "√2/3", "2/3", "3/5", "4/5"],
-    },
-    {
-        "question": "If 2|x + 3| = 10, what is the difference between the largest and smallest possible values of x?",
-        "solution": """
-            "1. Start by dividing both sides of the equation by 2: |x + 3| = 5.",
-            "2. Now, solve for x under two cases for the absolute value expression.",
-            "3. Case 1: x + 3 = 5, so x = 2.",
-            "4. Case 2: x + 3 = -5, so x = -8.",
-            "5. The possible values of x are 2 and -8.",
-            "6. The difference between the largest and smallest values of x: 2 - (-8) = 10.",
-        """,
-        "correct": "10",
-        "options": ["5", "6", "10", "12", "15"],
-    },
-    {
-        "question": "If |3x - 4| = 2x + 6, what is the sum of all possible values of x?",
-        "solution": """
-            "1. First, set up two equations based on the absolute value expression.",
-            "2. Case 1: 3x - 4 = 2x + 6.",
-            "   - Subtract 2x from both sides: x - 4 = 6.",
-            "   - Add 4 to both sides: x = 10.",
-            "3. Case 2: 3x - 4 = -(2x + 6).",
-            "   - Simplify the equation: 3x - 4 = -2x - 6.",
-            "   - Add 2x to both sides: 5x - 4 = -6.",
-            "   - Add 4 to both sides: 5x = -2.",
-            "   - Divide by 5: x = -2/5.",
-            "4. The possible values of x are 10 and -2/5.",
-            "5. Sum of all possible values of x: 10 + (-2/5) = 50/5 - 2/5 = 48/5.",
-        """,
-        "correct": "48/5",
-        "options": ["48/5", "10", "2", "4", "12"],
-    },
-    {
-        "question": "If |x - 7| = x^2 - 4x, what is the product of all possible values of x?",
-        "solution": """
-            "1. Set up the equation: |x - 7| = x^2 - 4x.",
-            "2. Case 1: x - 7 = x^2 - 4x.",
-            "   - Rearrange the equation: x^2 - 5x + 7 = 0.",
-            "   - Solve using the quadratic formula: x = [5 ± √(25 - 28)] / 2.",
-            "   - Since the discriminant is negative, there are no real solutions in this case.",
-            "3. Case 2: x - 7 = -(x^2 - 4x).",
-            "   - Rearrange the equation: x - 7 = -x^2 + 4x.",
-            "   - Rearrange: x^2 - 3x - 7 = 0.",
-            "   - Solve using the quadratic formula: x = [3 ± √(9 + 28)] / 2.",
-            "   - x = [3 ± √37] / 2.",
-            "4. The two possible values of x are (3 + √37)/2 and (3 - √37)/2.",
-            "5. The product of these roots is given by the constant term of the quadratic, which is -7.",
-            "6. The product of all possible values of x is -7.",
-        """,
-        "correct": "-7",
-        "options": ["-7", "-5", "0", "7", "3"],
-    },
-    {
-        "question": "If –1 < x < 0, which of the following must be true?\n\nI. x ^3 > x\n\nII. x ^4 > x ^2\n\nIII. x ^5 > 1 – x",
-        "solution": "1. I: Since x is negative and raised to an odd power (cube), x^3 is more negative than x, so x^3 < x. This is false.\n2. II: Since x is negative and raised to an even power, x^4 and x^2 are positive. x^4 is always greater than x^2 when x is between -1 and 0. This is true.\n3. III: Since x^5 will be negative and 1 - x is positive, x^5 is less than 1 - x. This is false.",
-        "correct": "II only",
-        "options": [
-            "I only",
-            "II only",
-            "III only",
-            "I and II only",
-            "II and III only",
-        ],
-    },
-    {
-        "question": "If –1 < x < 0, which of the following must be true?\n\nI. x^2 > x\n\nII. x^4 < x\n\nIII. 1 + x^3 > 0",
-        "solution": "1. I: Since x is negative, squaring it results in a positive number, which is always greater than x (since x is negative). This is true.\n2. II: x^4 is always positive, and since x is negative, x^4 will always be greater than x. This is false.\n3. III: x^3 is negative, so 1 + x^3 will be less than 1. This is false.",
-        "correct": "I only",
-        "options": ["I only", "II only", "III only", "I and II only", "I, II, and III"],
-    },
-    {
-        "question": "If –1 < x < 0, which of the following must be true?\n\nI. x^5 < x^3\n\nII. x^4 > 1\n\nIII. 1 – x^2 > x",
-        "solution": "1. I: Since both x^5 and x^3 are negative, but x^5 will be smaller in magnitude (since raising x to a higher power makes it more negative), x^5 is less than x^3. This is true.\n2. II: x^4 is positive, but since x is less than 0, x^4 will be less than 1. This is false.\n3. III: x^2 is positive and smaller than 1, so 1 - x^2 is greater than x. This is true.",
-        "correct": "I and III only",
-        "options": [
-            "I only",
-            "II and III only",
-            "I and III only",
-            "II only",
-            "I, II, and III",
-        ],
-    },
-    {
-        "question": "What is 25% of 36.8?",
-        "solution": "To find 25% of 36.8, we calculate (25/100) * 36.8 = 0.25 * 36.8 = 9.2.",
-        "correct": 9.2,
-        "options": [8.5, 9, 9.2, 9.5, 9.8],
-    },
-    {
-        "question": "Which of the following is equal to 40% of 56?",
-        "solution": "To find 40% of 56, we calculate (40/100) * 56 = 0.40 * 56 = 22.4.",
-        "correct": 22.4,
-        "options": [21.4, 22.4, 23, 23.6, 24.2],
-    },
-    {
-        "question": "What is 12.5% of 48?",
-        "solution": "To find 12.5% of 48, we calculate (12.5/100) * 48 = 0.125 * 48 = 6.",
-        "correct": 6,
-        "options": [5.5, 6, 6.5, 7, 7.5],
-    },
-    {
-        "question": "Daniel's income is 50% less than Sarah's income, and Alice's income is 20% less than Daniel's income. If Sarah gave 40% of her income to Alice and 60% of her income to Daniel, Daniel's new income would be what fraction of Alice's new income?",
-        "solution": "Let Sarah's income be S, Daniel's income be D, and Alice's income be A.\n- D = 0.5S (Daniel's income is 50% less than Sarah's)\n- A = 0.8D = 0.8 * 0.5S = 0.4S (Alice's income is 20% less than Daniel's income)\n\nSarah gives:\n- 40% of her income to Alice: 0.4S\n- 60% of her income to Daniel: 0.6S\n\nNow, Daniel’s new income = D + 0.6S = 0.5S + 0.6S = 1.1S\nAlice’s new income = A + 0.4S = 0.4S + 0.4S = 0.8S\n\nWe are asked to find what fraction Daniel's new income is of Alice's new income:\n1.1S / 0.8S = 1.1 / 0.8 = 11/8.",
-        "correct": "11/8",
-        "options": ["11/8", "13/8", "5/6", "7/6", "3/4"],
-    },
-    {
-        "question": "Helen's salary is 40% less than Jacob's salary, and Maria's salary is 15% less than Helen's salary. If Jacob gave 50% of his salary to Maria and 50% of his salary to Helen, Maria's new salary would be what fraction of Helen's new salary?",
-        "solution": "Let Jacob's salary be J, Helen's salary be H, and Maria's salary be M.\n- H = 0.6J (Helen's salary is 40% less than Jacob's)\n- M = 0.85H = 0.85 * 0.6J = 0.51J (Maria's salary is 15% less than Helen's)\n\nJacob gives:\n- 50% of his salary to Maria: 0.5J\n- 50% of his salary to Helen: 0.5J\n\nNow, Maria’s new salary = M + 0.5J = 0.51J + 0.5J = 1.01J\nHelen’s new salary = H + 0.5J = 0.6J + 0.5J = 1.1J\n\nWe are asked to find what fraction Maria's new salary is of Helen's new salary:\n1.01J / 1.1J = 1.01 / 1.1 = 101/110.",
-        "correct": "101/110",
-        "options": ["101/110", "9/10", "11/10", "19/20", "1/1"],
-    },
-    {
-        "question": "Lily's monthly income is 30% less than David's, and Tommy's monthly income is 10% more than Lily's income. If David gives 20% of his monthly income to Tommy and 80% of his monthly income to Lily, Lily's new income would be what fraction of Tommy's new income?",
-        "solution": "Let David's income be D, Lily's income be L, and Tommy's income be T.\n- L = 0.7D (Lily's income is 30% less than David's)\n- T = 1.1L = 1.1 * 0.7D = 0.77D (Tommy's income is 10% more than Lily's income)\n\nDavid gives:\n- 20% of his income to Tommy: 0.2D\n- 80% of his income to Lily: 0.8D\n\nNow, Lily’s new income = L + 0.8D = 0.7D + 0.8D = 1.5D\nTommy’s new income = T + 0.2D = 0.77D + 0.2D = 0.97D\n\nWe are asked to find what fraction Lily's new income is of Tommy's new income:\n1.5D / 0.97D = 1.5 / 0.97 ≈ 1.55.",
-        "correct": "1.55",
-        "options": ["1.55", "1.75", "1.25", "1.05", "1.45"],
-    },
-    {
-        "question": "A two-digit number and the number obtained by reversing its digits have a sum of 121. What is the greatest possible value of the two-digit number?",
-        "solution": "Let the two-digit number be 10a + b, where a is the tens digit and b is the units digit. The reversed number is 10b + a. The sum of the two numbers is (10a + b) + (10b + a) = 11a + 11b = 11(a + b). For the sum to be 121, we have 11(a + b) = 121, which simplifies to a + b = 11. To maximize the two-digit number 10a + b, we need to maximize a. The largest possible value of a is 9, so a = 9 and b = 2. Therefore, the greatest possible value of the two-digit number is 92.",
-        "correct": 92,
-        "options": [88, 92, 96, 99, 84],
-    },
-    {
-        "question": "If the sum of a two-digit number and the number obtained by reversing its digits is divisible by 11, what is the greatest possible value of the positive difference between the two numbers?",
-        "solution": "Let the two-digit number be represented as 10a + b and its reverse as 10b + a, where a and b are the tens and units digits respectively. The sum of the two numbers is (10a + b) + (10b + a) = 11a + 11b = 11(a + b). For the sum to be divisible by 11, a + b must be an integer. Therefore, the condition is always satisfied. The greatest possible value of the positive difference between the two numbers is |(10a + b) - (10b + a)| = 9|a - b|. To maximize the difference, |a - b| should be maximized. The greatest possible value occurs when a = 9 and b = 1, giving a difference of 9(9 - 1) = 72.",
-        "correct": 72,
-        "options": [70, 72, 74, 75, 78],
-    },
-    {
-        "question": "If the sum of a two-digit number and the number obtained by reversing its digits is less than 120, what is the greatest possible value of the number obtained by reversing the digits of the original number?",
-        "solution": "Let the two-digit number be 10a + b and its reverse be 10b + a, where a and b are the tens and units digits. The sum of the two numbers is (10a + b) + (10b + a) = 11(a + b). For the sum to be less than 120, we have 11(a + b) < 120, which simplifies to a + b < 10.91. The greatest possible integer value of a + b is 10. The greatest possible value of the reversed number occurs when a = 9 and b = 1, giving the reversed number as 19.",
-        "correct": 19,
-        "options": [18, 19, 20, 21, 22],
-    },
-    {
-        "question": "If a two-digit number is 3 times the number obtained by reversing its digits, what is the greatest possible value of the two-digit number?",
-        "solution": "Let the two-digit number be represented as 10a + b and its reverse as 10b + a, where a and b are the tens and units digits. The problem states that the number is three times the reversed number, so 10a + b = 3(10b + a). Expanding the equation gives 10a + b = 30b + 3a. Rearranging the terms gives 7a = 29b, so a = (29b) / 7. The only integer solution occurs when b = 7 and a = 29. This is not possible since a is a digit. Therefore, no two-digit number satisfies this condition. The greatest possible value for a valid two-digit number is not found in this case.",
-        "correct": "No solution",
-        "options": ["No solution", 42, 56, 63, 72],
-    },
-    {
-        "question": "Which of the following sets has the highest standard deviation?\n{10, 20, 30, 40, 50}\n{5, 7, 9, 11, 13}\n{1, 2, 3, 4, 5}\n{2, 4, 6, 8, 10}\n{3, 6, 9, 12, 15}",
-        "solution": "To calculate the standard deviation, we first find the mean and then compute the variance (the average of squared deviations from the mean). The set with the highest spread will have the highest standard deviation.\n\nSet 1: Mean = 30, Variance = 250, Standard Deviation = sqrt(250) ≈ 15.81\nSet 2: Mean = 9, Variance = 5.2, Standard Deviation = sqrt(5.2) ≈ 2.28\nSet 3: Mean = 3, Variance = 2, Standard Deviation = sqrt(2) ≈ 1.41\nSet 4: Mean = 6, Variance = 5, Standard Deviation = sqrt(5) ≈ 2.24\nSet 5: Mean = 7.5, Variance = 18.75, Standard Deviation = sqrt(18.75) ≈ 4.33\nThe set with the highest standard deviation is the first set, {10, 20, 30, 40, 50}.",
-        "correct": "{10, 20, 30, 40, 50}",
-        "options": [
-            "{10, 20, 30, 40, 50}",
-            "{5, 7, 9, 11, 13}",
-            "{1, 2, 3, 4, 5}",
-            "{2, 4, 6, 8, 10}",
-            "{3, 6, 9, 12, 15}",
-        ],
-    },
-    {
-        "question": "Which of the following sets has the smallest range?\n{12, 15, 18, 21, 24}\n{30, 32, 35, 38, 42}\n{7, 8, 9, 10, 11}\n{1, 5, 9, 13, 17}\n{25, 26, 27, 28, 29}",
-        "solution": "The range of a set is the difference between the largest and smallest number in the set.\n\nSet 1: Range = 24 - 12 = 12\nSet 2: Range = 42 - 30 = 12\nSet 3: Range = 11 - 7 = 4\nSet 4: Range = 17 - 1 = 16\nSet 5: Range = 29 - 25 = 4\nThe smallest range is 4, which occurs in sets {7, 8, 9, 10, 11} and {25, 26, 27, 28, 29}.",
-        "correct": "{7, 8, 9, 10, 11}",
-        "options": [
-            "{12, 15, 18, 21, 24}",
-            "{30, 32, 35, 38, 42}",
-            "{7, 8, 9, 10, 11}",
-            "{1, 5, 9, 13, 17}",
-            "{25, 26, 27, 28, 29}",
-        ],
-    },
-    {
-        "question": "Which of the following sets has the greatest variance?\n{1, 2, 3, 4, 5}\n{6, 7, 8, 9, 10}\n{1, 5, 7, 9, 10}\n{3, 5, 7, 9, 11}\n{2, 3, 5, 7, 10}",
-        "solution": "Variance is calculated by finding the mean, subtracting the mean from each value, squaring the result, and then averaging those squared differences.\n\nSet 1: Mean = 3, Variance = 2.5\nSet 2: Mean = 8, Variance = 2.5\nSet 3: Mean = 6.4, Variance = 8.2\nSet 4: Mean = 7, Variance = 8.2\nSet 5: Mean = 5.4, Variance = 6.7\nThe greatest variance is 8.2, which occurs in sets {1, 5, 7, 9, 10} and {3, 5, 7, 9, 11}.",
-        "correct": "{1, 5, 7, 9, 10}",
-        "options": [
-            "{1, 2, 3, 4, 5}",
-            "{6, 7, 8, 9, 10}",
-            "{1, 5, 7, 9, 10}",
-            "{3, 5, 7, 9, 11}",
-            "{2, 3, 5, 7, 10}",
-        ],
-    },
-    {
-        "question": "If (5^{x+2})(4^{2y-3}) = 20^{x+y}, what is the value of x + y?",
-        "solution": "1. Express 4 and 20 in terms of their prime factors. 4 = 2^2, 20 = 2^2 * 5.\n2. Substitute these into the equation: (5^{x+2})(2^{4y-6}) = 2^{2(x+y)} * 5^{x+y}.\n3. Equate the powers of 5: x+2 = x+y → y = 2.\n4. Equate the powers of 2: 4y - 6 = 2(x+y) → Substituting y = 2 gives x = -1.\n5. Therefore, x + y = 1.",
-        "correct": "1",
-        "options": ["-3", "-1", "0", "1", "3"],
-    },
-    {
-        "question": "If (3^{x-1})(5^{2y+3}) = 15^{x+y+2}, what is the value of x + y?",
-        "solution": "1. Express 15 as 3 * 5, so 15^{x+y+2} becomes 3^{x+y+2} * 5^{x+y+2}.\n2. Substitute into the equation: (3^{x-1})(5^{2y+3}) = 3^{x+y+2} * 5^{x+y+2}.\n3. Equate the powers of 3: x-1 = x+y+2 → y = -3.\n4. Equate the powers of 5: 2y+3 = x+y+2 → x = -2.\n5. Therefore, x + y = -5.",
-        "correct": "-5",
-        "options": ["-7", "-5", "-3", "0", "2"],
-    },
-    {
-        "question": "If (7^{2x})(9^{y-1}) = 63^{x+y}, what is the value of x + y?",
-        "solution": "1. Express 63 as 7 * 9, so 63^{x+y} becomes 7^{x+y} * 9^{x+y}.\n2. Substitute into the equation: (7^{2x})(9^{y-1}) = 7^{x+y} * 9^{x+y}.\n3. Equate the powers of 7: 2x = x + y → x = y.\n4. Equate the powers of 9: y-1 = x+y → x = -1.\n5. Therefore, x + y = -2.",
-        "correct": "-2",
-        "options": ["-4", "-2", 0, "2", "4"],
-    },
-    {
-        "question": "If x > y, x² – 2xy + y² = 9, and x + y = 9, what is the value of x?",
-        "solution": "1. From the equation x² – 2xy + y² = 9, notice that it is a perfect square trinomial. It can be factored as (x - y)² = 9.\n2. Therefore, x - y = ±3. Since x > y, we have x - y = 3.\n3. From x + y = 9, we now have the system of equations:\n   - x - y = 3\n   - x + y = 9\n4. Add the two equations:\n   - (x - y) + (x + y) = 3 + 9\n   - 2x = 12\n   - x = 6\n5. Therefore, the value of x is 6.",
-        "correct": "6",
-        "options": ["3", "6", "9", "12"],
-    },
-    {
-        "question": "If x + y = 10, and 3x² + 6xy + 3y² = 60, what is the value of x?",
-        "solution": "1. Factor the equation 3x² + 6xy + 3y² = 60:\n   - 3(x² + 2xy + y²) = 60\n   - x² + 2xy + y² = 20\n2. Notice that x² + 2xy + y² is the expansion of (x + y)², so:\n   - (x + y)² = 20\n3. Since x + y = 10, substitute this into the equation:\n   - (10)² = 20\n   - 100 = 20, which is incorrect.\n4. Hence, there is no valid solution for x.",
-        "correct": "No solution",
-        "options": ["5", "7", "No solution", "10"],
-    },
-    {
-        "question": "If x – y = 5, x² + y² = 49, what is the value of x?",
-        "solution": "1. From the equation x - y = 5, solve for y:\n   - y = x - 5\n2. Substitute this into the equation x² + y² = 49:\n   - x² + (x - 5)² = 49\n   - x² + (x² - 10x + 25) = 49\n   - 2x² - 10x + 25 = 49\n   - 2x² - 10x - 24 = 0\n3. Solve this quadratic equation using the quadratic formula:\n   - x = [-(-10) ± √((-10)² - 4(2)(-24))] / 2(2)\n   - x = [10 ± √(100 + 192)] / 4\n   - x = [10 ± √292] / 4\n   - x = [10 ± 17.09] / 4\n   - x = (10 + 17.09) / 4 = 27.09 / 4 = 6.77 or x = (10 - 17.09) / 4 = -7.09 / 4 = -1.77\n4. Since x > y, we take x = 6.77 (approximately).",
-        "correct": "6.77",
-        "options": ["6", "7", "6.77", "8"],
-    },
-]
+
+# Function to load questions from a JSON file
+def load_questions_from_json(file_path):
+    with open(file_path, "r") as file:
+        return json.load(file)
 
 
 def main():
     st.title("GMAT Practice Questions")
-    for i, q in enumerate(questions):
-        st.subheader(f"Question {i + 1}")
-        st.write(q["question"])
 
-        # Create a radio button for options
-        selected_option = st.radio(
-            "Select an option:",
-            q["options"],
-            index=None,
-            key=f"question_{i}",  # No option is selected initially
+    # Path to the folder containing the question files
+    questions_folder = "questions"
+
+    # Get a list of all JSON files in the questions folder
+    question_files = {
+        os.path.splitext(f)[0].capitalize().replace("_", " "): f
+        for f in os.listdir(questions_folder)
+        if f.endswith(".json")
+    }
+
+    # Dropdown menu to select a file
+    selected_file_name = st.selectbox("Select a question file", question_files)
+
+    # Load questions from the selected file
+    if selected_file_name:
+        questions = load_questions_from_json(
+            os.path.join(questions_folder, question_files[selected_file_name])
         )
 
-        # Button to show the solution
-        if st.button(f"Show Solution for Question {i + 1}", key=f"solution_{i}"):
-            if selected_option == q["correct"]:
-                st.success("Correct! \n\n" + q["solution"].replace("\n", " \n"))
-            else:
-                st.error("Incorrect. \n\n" + q["solution"].replace("\n", " \n"))
+        # Display questions
+        for i, q in enumerate(questions):
+            st.subheader(f"Question {i + 1}")
+            st.write(q["question"])
+
+            # Create a radio button for options
+            selected_option = st.radio(
+                "Select an option:",
+                q["options"],
+                index=None,
+                key=f"question_{i}",  # No option is selected initially
+            )
+
+            # Button to show the solution
+            if st.button(f"Show Solution for Question {i + 1}", key=f"solution_{i}"):
+                if selected_option == q["correct"]:
+                    st.success("Correct! \n\n" + q["solution"].replace("\n", " \n"))
+                else:
+                    st.error("Incorrect. \n\n" + q["solution"].replace("\n", " \n"))
 
 
 if __name__ == "__main__":
